@@ -1,0 +1,22 @@
+% =====================================================================
+% sec/5_conclusion.tex  --  Conclusion
+% =====================================================================
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented \textbf{ProbVLP}, a probabilistic vision-language adaptation framework
+for colorectal polyp segmentation. By combining an endoscopy-specific visual backbone
+(EndoViT), parameter-efficient LoRA adaptation of bidirectional cross-attention,
+boundary-feedback gating, and inverse-variance TTA, ProbVLP achieves strong
+cross-domain generalization while producing calibrated uncertainty maps.
+
+Our results demonstrate that training exclusively on Kvasir-SEG yields competitive
+zero-shot performance on four structurally diverse colonoscopy datasets, supporting
+the clinical viability of VLP-based polyp segmentation. Future work will investigate
+fully probabilistic text-conditioning, self-supervised domain adaptation with
+pseudo-labels, and uncertainty-guided active learning for efficient clinical annotation.
+
+\paragraph{Acknowledgements.}
+This work was supported by \textit{[funding details]}.
+Experiments were conducted on Kaggle GPU servers.
