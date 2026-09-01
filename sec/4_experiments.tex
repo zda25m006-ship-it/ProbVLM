@@ -1,0 +1,94 @@
+% =====================================================================
+% sec/4_experiments.tex  --  Experiments
+% =====================================================================
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Datasets}
+\label{subsec:datasets}
+
+We use five publicly available colonoscopy datasets:
+\begin{itemize}
+    \item \textbf{Kvasir-SEG}~\cite{jha2020kvasir}: 1000 polyp images with
+          pixel-level annotations. Used for training and in-domain evaluation.
+    \item \textbf{CVC-ClinicDB}~\cite{bernal2015clinicdb}: 612 frames from
+          31 colonoscopy sequences. Zero-shot evaluation target.
+    \item \textbf{ColonDB}~\cite{tajbakhsh2015colondb}: 380 frames.
+          Zero-shot evaluation target.
+    \item \textbf{CVC-300}~\cite{vazquez2017cvc300}: 60 frames.
+          Zero-shot evaluation target.
+    \item \textbf{BKAI-IGH}~\cite{ngoc2021bkai}: 1000 frames including
+          neoplastic and non-neoplastic polyps. Zero-shot evaluation target.
+\end{itemize}
+
+\subsection{Implementation Details}
+\label{subsec:impl}
+
+All images are resized to $224{\times}224$. We train for 100 epochs with batch
+size 16 using the Adam optimizer ($\text{lr}{=}10^{-4}$, cosine annealing to
+$10^{-4}$). The EndoViT backbone is frozen; only the LoRA parameters, text
+projection, boundary gate scalars, and seg head are trained
+($\approx 3.2$M trainable parameters). Experiments run on a single NVIDIA A100-80GB.
+
+\subsection{Evaluation Metrics}
+\label{subsec:metrics}
+
+We report Dice Similarity Coefficient (DSC, \%), Normalized Surface Dice
+(NSD, \%) at 2px tolerance, and 95th-percentile Hausdorff Distance (HD95, px).
+
+\subsection{Architecture Ablation (Table~A)}
+\label{subsec:ablation}
+
+\cref{tab:ablation} reports the incremental contribution of each proposed
+component on the Kvasir-SEG test set (ablation models trained for 30 epochs).
+
+\begin{table}[h]
+\centering
+\caption{Architecture ablation on Kvasir-SEG (in-domain).}
+\label{tab:ablation}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{EndoViT} & \textbf{LoRA} & \textbf{BdFB} & \textbf{DSC\%} & \textbf{NSD\%} \\
+\midrule
+Baseline (MedCLIPSeg) & \texttimes & \texttimes & \texttimes & -- & -- \\
++ EndoViT             & \checkmark & \texttimes & \texttimes & -- & -- \\
++ LoRA PVL            & \checkmark & \checkmark & \texttimes & -- & -- \\
++ Boundary Feedback   & \checkmark & \checkmark & \checkmark & -- & -- \\
++ TTA (ours)          & \checkmark & \checkmark & \checkmark & \textbf{--} & \textbf{--} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\noindent\textit{(Numeric results will be filled after the Kaggle run completes.)}
+
+\subsection{Cross-Domain Generalization (Table~B)}
+\label{subsec:cross_domain}
+
+\cref{tab:cross_domain} reports zero-shot performance of the fully-trained ProbVLP
+model on all five datasets, with and without TTA.
+
+\begin{table}[h]
+\centering
+\caption{Cross-domain generalization results. Model trained on Kvasir-SEG only.}
+\label{tab:cross_domain}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\multirow{2}{*}{\textbf{Dataset}} & \multicolumn{3}{c}{\textbf{w/o TTA}} & \multicolumn{3}{c}{\textbf{w/ TTA}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+ & DSC\% & NSD\% & HD95 & DSC\% & NSD\% & HD95 \\
+\midrule
+Kvasir (ID)  & -- & -- & -- & -- & -- & -- \\
+ClinicDB     & -- & -- & -- & -- & -- & -- \\
+ColonDB      & -- & -- & -- & -- & -- & -- \\
+CVC-300      & -- & -- & -- & -- & -- & -- \\
+BKAI         & -- & -- & -- & -- & -- & -- \\
+\midrule
+\textit{OOD Avg.} & -- & -- & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\noindent\textit{(Numeric results will be filled after the Kaggle run completes.)}
