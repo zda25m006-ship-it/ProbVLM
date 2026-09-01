@@ -1,0 +1,66 @@
+% =====================================================================
+% main.tex  --  ProbVLP: Probabilistic Vision-Language Adaptation
+%               for Colorectal Polyp Segmentation
+% =====================================================================
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+% If you are using the official WACV/CVPR style package, load it here:
+% \usepackage[review]{wacv}
+
+\usepackage{times}
+\usepackage[T1]{fontenc}
+
+% ---------------------------------------------------------------------
+% Core packages
+% ---------------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% cleveref must load AFTER hyperref.
+\usepackage[capitalize]{cleveref}
+
+% ---------------------------------------------------------------------
+% Custom math operators
+% ---------------------------------------------------------------------
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\softplus}{softplus}
+\DeclareMathOperator{\GELU}{GELU}
+\DeclareMathOperator{\GN}{GN}
+\DeclareMathOperator{\GAP}{GAP}
+\DeclareMathOperator{\AvgPool}{AvgPool}
+\DeclareMathOperator{\DWConv}{DWConv}
+\DeclareMathOperator{\Conv}{Conv}
+\DeclareMathOperator{\Up}{Up}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+% ---------------------------------------------------------------------
+\title{ProbVLP: Probabilistic Vision-Language Adaptation
+       for Colorectal Polyp Segmentation}
+\author{
+    Anonymous Author(s)\\
+    Institution(s)\\
+    {\tt\small anonymous@email.edu}
+}
+% ---------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+\input{sec/1_intro}
+\input{sec/2_related}
+\input{sec/3_method}
+\input{sec/4_experiments}
+\input{sec/5_conclusion}
+
+% =====================================================================
+% Bibliography
+% =====================================================================
+\bibliographystyle{ieeenat_fullname}
+\bibliography{references}
+
+\end{document}
