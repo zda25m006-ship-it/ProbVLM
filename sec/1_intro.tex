@@ -1,0 +1,49 @@
+% =====================================================================
+% sec/1_intro.tex  --  Introduction
+% =====================================================================
+
+\section{Introduction}
+\label{sec:intro}
+
+Colorectal cancer is one of the leading causes of cancer-related mortality worldwide.
+Early detection and accurate delineation of colorectal polyps during colonoscopy are
+essential for reducing mortality. While deep learning has made remarkable progress in
+medical image segmentation, generalizing across diverse colonoscopy equipment and
+imaging protocols remains a fundamental challenge.
+
+\paragraph{Motivation.}
+Recent vision-language pre-trained (VLP) models such as CLIP~\cite{radford2021clip}
+and MedCLIP~\cite{wang2022medclip} have demonstrated strong cross-modal alignment
+between images and text. However, directly adapting general-domain VLP models to
+colorectal polyp segmentation introduces two limitations:
+\begin{enumerate}
+    \item \textbf{Domain gap}: General VLP visual encoders are not exposed to
+          endoscopic image statistics, leading to suboptimal feature representations.
+    \item \textbf{Deterministic adaptation}: Standard fine-tuning produces point
+          estimates without capturing epistemic uncertainty, which is critical for
+          clinical decision support.
+\end{enumerate}
+
+\paragraph{Contributions.}
+We propose \textbf{ProbVLP}, a probabilistic adaptation framework for colorectal
+polyp segmentation that addresses both limitations:
+\begin{itemize}
+    \item \textbf{EndoViT visual backbone}: We replace the CLIP visual tower with
+          EndoViT~\cite{} -- a ViT-B/16 pretrained via masked autoencoding on
+          Endo700k -- to obtain endoscopy-specific visual features.
+    \item \textbf{LoRA-adapted Probabilistic Vision-Language (PVL) adapters}: We
+          inject low-rank adaptation (LoRA) into the bidirectional cross-attention
+          layers of the PVL adapters, enabling parameter-efficient modality alignment
+          with as few as $r{=}8$ trainable parameters per projection matrix.
+    \item \textbf{Boundary-feedback gating}: A lightweight boundary prediction
+          branch provides spatial priors that are gated back into subsequent PVL
+          adapter forward passes via learnable per-adapter scalar gates.
+    \item \textbf{Inverse-variance TTA}: At inference time, we fuse predictions
+          from multiple augmented views (flips + scales + MC-dropout samples) using
+          inverse-variance weighting, producing calibrated uncertainty maps alongside
+          segmentation masks.
+\end{itemize}
+
+Trained exclusively on Kvasir-SEG, ProbVLP achieves state-of-the-art cross-domain
+generalization to four unseen datasets (ClinicDB, ColonDB, CVC300, BKAI), validating
+its applicability in real-world clinical settings.
