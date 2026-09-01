@@ -1,0 +1,34 @@
+% =====================================================================
+% sec/2_related.tex  --  Related Work
+% =====================================================================
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Polyp Segmentation.}
+Early CNN-based methods~\cite{fan2020pranet,wei2021shallow} achieved strong
+performance on single-dataset benchmarks but struggle to generalize across
+colonoscopy centers due to variation in illumination, camera models, and polyp
+appearance. Transformer-based architectures~\cite{zhang2021transfuse,dong2021polyp}
+improve long-range context modelling but still require domain-specific fine-tuning.
+
+\paragraph{Vision-Language Pre-training for Medical Imaging.}
+CLIP~\cite{radford2021clip} pioneered contrastive image-text alignment at scale.
+MedCLIP~\cite{wang2022medclip} and UniMedCLIP~\cite{} extend this to the medical
+domain using curated radiology and pathology report pairs. MedCLIPSeg~\cite{}
+demonstrates that VLP representations can guide segmentation through text prompts,
+achieving competitive zero-shot performance on multiple medical modalities.
+
+\paragraph{Parameter-Efficient Fine-Tuning.}
+LoRA~\cite{hu2022lora} introduces low-rank weight updates that substantially reduce
+the number of trainable parameters. Adapter-based methods~\cite{houlsby2019adapter}
+insert lightweight bottleneck modules between frozen Transformer layers.
+In this work we apply LoRA to the cross-attention projection matrices inside the
+PVL adapters of MedCLIPSeg, combining adapter-style modality bridging with
+low-rank efficiency.
+
+\paragraph{Uncertainty Estimation in Medical Segmentation.}
+Monte Carlo (MC) dropout~\cite{gal2016dropout} provides a practical approximation
+to Bayesian inference. Combining MC-dropout with test-time augmentation (TTA) and
+inverse-variance fusion~\cite{wang2019aleatoric} yields well-calibrated uncertainty
+maps that are actionable for clinical risk stratification.
