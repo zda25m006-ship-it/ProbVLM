@@ -1,0 +1,112 @@
+% =====================================================================
+% sec/3_method.tex  --  Methodology
+% =====================================================================
+
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Overview}
+\label{subsec:overview}
+
+\cref{fig:arch} illustrates the overall ProbVLP architecture. Given an input
+endoscopic image $\bm{x} \in \mathbb{R}^{3 \times H \times W}$ and a text prompt
+$\bm{t}$ (e.g., ``\textit{a colonoscopy image of a polyp}''), ProbVLP produces
+a segmentation logit map $\hat{\bm{y}} \in \mathbb{R}^{H \times W}$ and a
+calibrated uncertainty map $\bm{u} \in \mathbb{R}^{H \times W}$.
+
+\subsection{EndoViT Visual Backbone}
+\label{subsec:endovit}
+
+We replace the CLIP ViT-B/16 visual tower with \textbf{EndoViT}, a ViT-B/16
+pretrained via masked autoencoding (MAE) on Endo700k -- a large-scale collection
+of endoscopic images. EndoViT produces a sequence of patch tokens
+$\bm{F}_v \in \mathbb{R}^{(1+N_p) \times d}$, where $N_p = (H/p)^2$ for patch
+size $p{=}16$ and $d{=}768$.
+
+\textbf{Domain renormalization.} Because the incoming image is normalized to CLIP
+statistics $(\mu_\text{CLIP}, \sigma_\text{CLIP})$ by the upstream dataloader, we
+undo this normalization and renormalize to EndoViT's pretraining statistics
+$(\mu_\text{EndoViT}, \sigma_\text{EndoViT})$ at the patch-embedding stage:
+\begin{equation}
+    \hat{\bm{x}} = \frac{\bm{x} \odot \sigma_\text{CLIP} + \mu_\text{CLIP}
+                   - \mu_\text{EndoViT}}{\sigma_\text{EndoViT}}.
+\end{equation}
+
+\subsection{LoRA-Adapted PVL Adapters}
+\label{subsec:lora}
+
+The PVL adapters~\cite{} use bidirectional cross-attention to fuse image and
+text tokens. Let $\bm{W}_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$
+denote a frozen projection matrix (query, key, value, or output). We augment it
+with a LoRA delta:
+\begin{equation}
+    \bm{W} = \bm{W}_0 + \frac{\alpha}{r}\,\bm{B}\bm{A},
+\end{equation}
+where $\bm{A} \in \mathbb{R}^{r \times d_\text{in}}$,
+$\bm{B} \in \mathbb{R}^{d_\text{out} \times r}$, $r{=}8$, $\alpha{=}16$.
+$\bm{A}$ is initialized with Kaiming uniform, $\bm{B}$ with zeros, so the delta
+is zero at initialization and training starts from the pretrained MedCLIPSeg
+weights. We apply LoRA to $\{$\texttt{q\_proj, k\_proj, v\_proj, out\_proj}$\}$
+in both cross-attention directions (\emph{image-to-text} and \emph{text-to-image}).
+
+\subsection{Boundary-Feedback Gating}
+\label{subsec:boundary}
+
+A lightweight boundary head $\mathcal{B}$ predicts boundary logits
+$\bm{b}^{(t)} \in \mathbb{R}^{H \times W}$ from the upscaled feature map at
+training step $t$. At step $t{+}1$, a downsampled version of $\sigma(\bm{b}^{(t)})$
+biases the image token stream entering each PVL adapter:
+\begin{equation}
+    \tilde{\bm{f}}_i = \bm{f}_i + \tanh(g_i)\,
+        \mathcal{P}(\sigma(\bm{b}^{(t)})),
+\end{equation}
+where $g_i$ is a per-adapter learnable scalar gate (initialized to 0) and
+$\mathcal{P}$ denotes adaptive average pooling to the patch grid. $g_i$ starts
+at 0 (identical to no gating), allowing the network to learn the appropriate
+feedback magnitude from data.
+
+\subsection{Segmentation Head}
+\label{subsec:seghead}
+
+The upscaled feature map $\bm{F} \in \mathbb{R}^{C \times H' \times W'}$ is
+processed by a Squeeze-and-Excitation (SE) block~\cite{hu2018senet} for
+channel recalibration:
+\begin{equation}
+    \bm{F}_\text{SE} = \bm{F} \odot \sigma\!\left(
+        \bm{W}_2 \,\text{GELU}\!\left(\bm{W}_1\,\GAP(\bm{F})\right)\right).
+\end{equation}
+Segmentation logits are obtained via dot-product similarity with the projected
+text embedding:
+\begin{equation}
+    \hat{\bm{y}} = \text{Up}\!\left(
+        \bm{W}_\text{mask}(\hat{\bm{t}})\cdot\bm{F}_\text{SE}\right),
+\end{equation}
+where $\hat{\bm{t}} = \bm{t}/\norm{\bm{t}}$ is the $\ell_2$-normalized text
+feature.
+
+\subsection{Training Objective}
+\label{subsec:losses}
+
+We minimize a composite loss:
+\begin{equation}
+    \mathcal{L} = \mathcal{L}_\text{Dice} + \mathcal{L}_\text{BCE}
+                + \lambda_T\,\mathcal{L}_\text{Tversky}
+                + \lambda_B\,\mathcal{L}_\text{Boundary},
+\end{equation}
+where $\lambda_T{=}0.3$, $\lambda_B{=}0.3$. The Tversky loss uses $\alpha{=}0.3$,
+$\beta{=}0.7$ to penalize false negatives more heavily. $\mathcal{L}_\text{Boundary}$
+is binary cross-entropy between boundary logits and soft boundary labels obtained
+via morphological dilation/erosion of the ground-truth mask.
+
+\subsection{Inference with Inverse-Variance TTA}
+\label{subsec:tta}
+
+At test time we generate $K{=}6$ augmented views (original $+$ horizontal flip,
+each at three scales $\{0.85, 1.0, 1.15\}$), each processed with $M{=}20$
+MC-dropout samples. The fused prediction and uncertainty are:
+\begin{align}
+    \hat{\bm{p}} &= \frac{\sum_k \bm{m}_k / \bm{v}_k}{\sum_k 1 / \bm{v}_k}, \\
+    \bm{u}       &= \left(\sum_k 1 / \bm{v}_k\right)^{-1},
+\end{align}
+where $\bm{m}_k$ and $\bm{v}_k$ are the per-view mean and variance from the
+MC-dropout samples. Pixels with $\hat{\bm{p}} > 0.5$ are classified as polyp.
