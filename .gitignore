@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# Jupyter / Kaggle
+*.ipynb_checkpoints
+.ipynb_checkpoints/
+
+# Data and model weights
+data/
+runs/
+*.pth
+*.pt
+*.bin
+*.ckpt
+*.safetensors
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.toc
+*.lot
+*.lof
+_minted*/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
